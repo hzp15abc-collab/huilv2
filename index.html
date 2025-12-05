@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多功能兑换工具 (货币 & 面积)</title>
+    <style>
+        :root {
+            --primary-color: #007AFF;
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        /* 顶部时钟区域 */
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .time-display {
+            font-size: 2em;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .date-display {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        /* 功能模块 */
+        .section {
+            padding: 25px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title span {
+            margin-right: 10px;
+        }
+
+        /* 输入控件组 */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.1em;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        select {
+            flex: 0 0 120px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            background-color: #fff;
+        }
+
+        .swap-btn {
+            align-self: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5em;
+            color: var(--primary-color);
+            padding: 5px;
+            transition: transform 0.2s;
+        }
+
+        .swap-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .result-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: right;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--primary-color);
+            min-height: 1.5em;
+        }
+
+        .rate-info {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 480px) {
+            .time-display { font-size: 1.5em; }
+            input[type="number"], select { font-size: 0.9em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="time-display" id="clock">00:00:00</div>
+        <div class="date-display" id="date">加载中...</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title"><span>💱</span> 货币实时兑换</div>
+
+        <div class="input-group">
+            <div class="row">
+                <input type="number" id="curr-amount" value="100" placeholder="金额">
+                <select id="curr-from">
+                    <option value="CNY" selected>🇨🇳 人民币 (CNY)</option>
+                    <option value="SGD">🇸🇬 新币 (SGD)</option>
+                    <option value="HKD">🇭🇰 港币 (HKD)</option>
+                    <option value="THB">🇹🇭 泰铢 (THB)</option>
+                    <option value="TWD">🇹🇼 台币 (TWD)</option>
+                    <option value="JPY">🇯🇵 日元 (JPY)</option>
+                    <option disabled>──────────</option>
+                    <option value="USD">🇺🇸 美元 (USD)</option>
+                    <option value="EUR">🇪🇺 欧元 (EUR)</option>
+                </select>
+            </div>
+
+            <button class="swap-btn" onclick="swapCurrency()">⇅</button>
+
+            <div class="row">
+                <select id="curr-to">
+                    <option value="CNY">🇨🇳 人民币 (CNY)</option>
+                    <option value="SGD" selected>🇸🇬 新币 (SGD)</option>
+                    <option value="HKD">🇭🇰 港币 (HKD)</option>
+                    <option value="THB">🇹🇭 泰铢 (THB)</option>
+                    <option value="TWD">🇹🇼 台币 (TWD)</option>
+                    <option value="JPY">🇯🇵 日元 (JPY)</option>
+                    <option disabled>──────────</option>
+                    <option value="USD">🇺🇸 美元 (USD)</option>
+                    <option value="EUR">🇪🇺 欧元 (EUR)</option>
+                </select>
+            </div>
+
+            <div class="result-box" id="curr-result">计算中...</div>
+            <div class="rate-info" id="rate-info">正在获取最新汇率...</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title"><span>📐</span> 面积换算 (含台湾坪)</div>
+
+        <div class="input-group">
+            <div class="row">
+                <input type="number" id="area-amount" value="1" placeholder="面积">
+                <select id="area-from">
+                    <option value="sqm" selected>平方米 (m²)</option>
+                    <option value="sqft">平方英尺 (ft²)</option>
+                    <option value="ping">台湾坪 (坪)</option>
+                </select>
+            </div>
+
+            <button class="swap-btn" onclick="swapArea()">⇅</button>
+
+            <div class="row">
+                <select id="area-to">
+                    <option value="sqm">平方米 (m²)</option>
+                    <option value="sqft">平方英尺 (ft²)</option>
+                    <option value="ping" selected>台湾坪 (坪)</option>
+                </select>
+            </div>
+
+            <div class="result-box" id="area-result">0.3025</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 1. 时钟功能 ---
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('zh-CN', { hour12: false });
+        const dateString = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+
+        document.getElementById('clock').textContent = timeString;
+        document.getElementById('date').textContent = dateString;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // --- 2. 货币功能 ---
+    // 注意：实际生产环境建议申请自己的 API Key。这里使用公共免费接口。
+    // 如果 API 挂了，会回退到 fallbackRates (大致参考值)
+    const API_URL = "https://api.exchangerate-api.com/v4/latest/CNY"; // 以人民币为基准
+
+    let exchangeRates = {};
+    // 备用静态汇率 (防止 API 无法访问时崩溃)
+    const fallbackRates = {
+        "CNY": 1,
+        "SGD": 0.18,
+        "HKD": 1.08,
+        "THB": 4.95,
+        "TWD": 4.40,
+        "JPY": 20.5,
+        "USD": 0.14,
+        "EUR": 0.13
+    };
+
+    async function fetchRates() {
+        const infoDiv = document.getElementById('rate-info');
+        try {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            exchangeRates = data.rates; // 获取相对于 CNY 的汇率
+
+            infoDiv.textContent = `汇率更新时间: ${new Date(data.date).toLocaleDateString()}`;
+            calculateCurrency();
+        } catch (error) {
+            console.warn("API连接失败，使用离线参考汇率", error);
+            exchangeRates = fallbackRates;
+            infoDiv.textContent = "⚠️ 网络未连接，使用离线参考汇率";
+            calculateCurrency();
+        }
+    }
+
+    function calculateCurrency() {
+        const amount = parseFloat(document.getElementById('curr-amount').value);
+        const from = document.getElementById('curr-from').value;
+        const to = document.getElementById('curr-to').value;
+        const resultDiv = document.getElementById('curr-result');
+
+        if (isNaN(amount)) {
+            resultDiv.textContent = "---";
+            return;
+        }
+
+        const rateFrom = exchangeRates[from];
+        const rateTo = exchangeRates[to];
+
+        if (!rateFrom || !rateTo) return;
+
+        const inCNY = amount / rateFrom;
+        const finalAmount = inCNY * rateTo;
+
+        resultDiv.textContent = finalAmount.toLocaleString('zh-CN', { maximumFractionDigits: 2 }) + " " + to;
+    }
+
+    function swapCurrency() {
+        const from = document.getElementById('curr-from');
+        const to = document.getElementById('curr-to');
+        const temp = from.value;
+        from.value = to.value;
+        to.value = temp;
+        calculateCurrency();
+    }
+
+    document.getElementById('curr-amount').addEventListener('input', calculateCurrency);
+    document.getElementById('curr-from').addEventListener('change', calculateCurrency);
+    document.getElementById('curr-to').addEventListener('change', calculateCurrency);
+
+    // --- 3. 面积功能 ---
+    // 换算系数 (以平方米为基准 1 sqm)
+    const areaRates = {
+        "sqm": 1,
+        "sqft": 10.7639,
+        "ping": 0.3025
+    };
+
+    function calculateArea() {
+        const amount = parseFloat(document.getElementById('area-amount').value);
+        const from = document.getElementById('area-from').value;
+        const to = document.getElementById('area-to').value;
+        const resultDiv = document.getElementById('area-result');
+
+        if (isNaN(amount)) {
+            resultDiv.textContent = "---";
+            return;
+        }
+
+        let inSqm = 0;
+        if (from === 'sqm') inSqm = amount;
+        else inSqm = amount / areaRates[from];
+
+        let finalArea = 0;
+        if (to === 'sqm') finalArea = inSqm;
+        else finalArea = inSqm * areaRates[to];
+
+        resultDiv.textContent = finalArea.toLocaleString('zh-CN', { maximumFractionDigits: 4 });
+    }
+
+    function swapArea() {
+        const from = document.getElementById('area-from');
+        const to = document.getElementById('area-to');
+        const temp = from.value;
+        from.value = to.value;
+        to.value = temp;
+        calculateArea();
+    }
+
+    document.getElementById('area-amount').addEventListener('input', calculateArea);
+    document.getElementById('area-from').addEventListener('change', calculateArea);
+    document.getElementById('area-to').addEventListener('change', calculateArea);
+
+    fetchRates();
+    calculateArea();
+</script>
+
+</body>
+</html>
